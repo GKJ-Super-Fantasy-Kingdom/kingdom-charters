@@ -1,0 +1,10 @@
+{
+  "name": "KingdomCharters",
+  "version_number": "0.1.0",
+  "website_url": "https://github.com/GKJ-Super-Fantasy-Kingdom/KingdomCharters",
+  "description": "Choose a charter before a new run. Trade earlier caravans for coin fees, or take extra wood or stone against your first deliveries.",
+  "dependencies": [
+    "BepInEx-BepInExPack-5.4.2305",
+    "BepInEx-HideManagerGameObject_Config-5.4.2304"
+  ]
+}
