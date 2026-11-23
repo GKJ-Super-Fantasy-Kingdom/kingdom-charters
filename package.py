@@ -15,6 +15,7 @@ if name != "KingdomCharters" or version != project.findtext(".//Version"):
     raise SystemExit("Manifest name or version differs from the project.")
 dll = root / "bin" / "Release" / project.findtext(".//TargetFramework") / f"{name}.dll"
 files = {
+    "LICENSE": root / "LICENSE",
     "manifest.json": listing / "manifest.json",
     "README.md": root / "README.md",
     "CHANGELOG.md": root / "CHANGELOG.md",

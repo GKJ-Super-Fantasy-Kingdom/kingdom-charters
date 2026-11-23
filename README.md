@@ -25,3 +25,9 @@ The outstanding material debt appears in the lower-left corner. The charter trav
 Use the installed game assemblies and a Thunderstore profile containing BepInEx 5. Run `dotnet build KingdomCharters.csproj -c Release`, then `python package.py`. Override `GameDir` and `ProfileDir` with MSBuild properties for other installations. The ZIP is written to `dist/`.
 
 Run `python tests/smoke.py` on 64-bit Windows to load the packaged DLL in the installed game’s embedded Mono runtime, exercise charter and storage rules, and install and remove the Harmony patches. This offline harness runs without a Unity scene or controller. Mono can print unresolved Unity engine internal-call diagnostics in this mode. The harness returns its assertion result as the exit code.
+
+## Contributing and license
+
+Bug reports and pull requests are welcome. See the [contribution guide](CONTRIBUTING.md) for local testing and reporting instructions.
+
+The original mod code is available under the [MIT License](LICENSE). Super Fantasy Kingdom, its game assets, and third-party dependencies retain their respective licenses and ownership.
