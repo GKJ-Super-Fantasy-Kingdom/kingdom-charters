@@ -8,7 +8,7 @@ At hero selection, choose a charter for your next run. Bring the first caravan f
 - **Merchant Charter** lets the first scheduled caravan arrive one day early if the gate is open and the guest slot is free. If it cannot arrive early, it keeps its appointment. Each immediate item pick costs one extra coin on top of its shop price. Browsing and declining are free.
 - **Forester’s Charter** gives you 3 extra units of your kingdom’s wood equivalent at the start. Repay the next 2 units of its stone equivalent delivered to your stores.
 - **Mason’s Charter** gives you 2 extra units of your kingdom’s stone equivalent at the start. Repay the next 3 units of its wood equivalent delivered to your stores.
-- The bottom-center HUD shows your remaining debt. If Forester owes 1 stone when a delivery brings 3, you keep 2 and the debt clears.
+- A badge above the unit cards shows the owed material’s icon and the remaining balance. If Forester owes 1 stone when a delivery brings 3, you keep 2 and the debt clears.
 
 ## How to Use
 
@@ -18,20 +18,21 @@ At hero selection, choose a charter for your next run. Bring the first caravan f
 
 ## Screenshots
 
-![Charter picker with Standard Run focused and Merchant unavailable because a companion mod sets the schedule](https://raw.githubusercontent.com/GKJ-Super-Fantasy-Kingdom/kingdom-charters/1e914d06eefe7011840a987510deb75e295e0ae1/docs/screenshots/charter-picker.png)
+![Forester selected in the charter picker, with the opening wood grant and later stone repayment visible](https://raw.githubusercontent.com/GKJ-Super-Fantasy-Kingdom/kingdom-charters/main/docs/screenshots/0.1.2/charter-picker.png)
 
-*Picker at 1× UI scale. The Merchant row explains why it is unavailable in this run.*
+*1× UI scale. Compare Forester’s terms with Mason’s in the next row. The Merchant row explains why it is unavailable in this run.*
 
-![Human Kingdom Forester confirmation offering three Wood for the next two Stone delivered](https://raw.githubusercontent.com/GKJ-Super-Fantasy-Kingdom/kingdom-charters/1e914d06eefe7011840a987510deb75e295e0ae1/docs/screenshots/forester-materials.png)
+![A stone icon and two-Stone charter balance above the raised unit card on the Human kingdom map](https://raw.githubusercontent.com/GKJ-Super-Fantasy-Kingdom/kingdom-charters/main/docs/screenshots/0.1.2/forester-debt.png)
 
-*Forester at 1.5× UI scale. You can still choose Standard Run before receiving the Wood.*
+*1.5× UI scale. The badge shows the two Stone still due. The unit cards below it and the compact resource ledger at the top remain readable.*
 
-Both captures are from Kingdom Charters 0.1.0 on Windows, in Super Fantasy Kingdom 0.8.067 at 1920 × 1080. Controller checks used simulated input through the game’s Input System.
+Captured in Kingdom Charters 0.1.2 on Super Fantasy Kingdom 0.8.068 at 1920 × 1080 on Windows, using a virtual Xbox-style controller. The map capture uses a copied day-10 save with the debt restored for the screenshot.
 
 ## Compatibility
 
 - Challenge runs skip the picker. Existing saves without a charter continue under standard rules.
 - Supply charters require two distinct materials with usable stores. If the kingdom lacks a pair, the opening confirmation offers Standard Run. Debt collection begins after opening grants from the king’s dialogue, the starter screen and the game’s starting-resource grant.
+- The debt badge clears the compact strip and expanded ledger in [Daybook](https://thunderstore.io/c/super-fantasy-kingdom/p/GKJ/Daybook/).
 - [Daily Caravan](https://thunderstore.io/c/super-fantasy-kingdom/p/GKJ/DailyCaravan/) makes Merchant unavailable for new runs. Loading it during an existing Merchant run suspends both the early arrival and the extra fee.
 - [Caravan Commissions](https://thunderstore.io/c/super-fantasy-kingdom/p/GKJ/CaravanCommissions/) deliveries are prepaid. Collecting one costs no charter fee, even after deferring it. If another mod hooks caravan arrival or eligibility, Merchant keeps the existing schedule and its immediate-pick fee. The picker shows those terms before you commit.
 - With [ExtraStartingCarrier](https://thunderstore.io/c/super-fantasy-kingdom/p/ownlyme/ExtraStartingCarrier/) 1.0.0, the extra carrier and the charter supplies each apply once. With [CheatMenu](https://thunderstore.io/c/super-fantasy-kingdom/p/ILM/CheatMenu/) 1.0.3, the charter takes only the outstanding debt from the adjusted production yield. Offline checks covered 1× and 3× yield.

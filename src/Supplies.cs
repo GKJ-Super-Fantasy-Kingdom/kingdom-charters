@@ -13,7 +13,8 @@ namespace KingdomCharters
         private static bool opening;
         private static int openingScopes;
         private static ResourceType gift, owed;
-        internal static string OwedName => MaterialName(Plugin.Instance.Run.choice == Charter.Forester ? ResourceType.Stone : ResourceType.Wood);
+        internal static ResourceType OwedSlot => Plugin.Instance.Run.choice == Charter.Forester ? ResourceType.Stone : ResourceType.Wood;
+        internal static string OwedName => MaterialName(OwedSlot);
 
         private static string MaterialName(ResourceType slot)
         {

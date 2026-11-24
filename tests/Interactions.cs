@@ -336,6 +336,12 @@ internal static class Interactions
         other.Patch(day, postfix: new HarmonyMethod(typeof(Interactions), "Observer"));
         var picker = mod.GetType("KingdomCharters.CharterPicker");
         var menu = FormatterServices.GetUninitializedObject(picker);
+        var forester = (string)Call(picker, "Terms", menu, 2);
+        var mason = (string)Call(picker, "Terms", menu, 3);
+        Smoke.Check(forester.Contains("3 extra") && forester.Contains("Repay 2") &&
+            mason.Contains("2 extra") && mason.Contains("Repay 3") &&
+            forester.Contains("later deliveries") && mason.Contains("later deliveries"),
+            "picker compares both supply grants and later repayment amounts");
         Smoke.Check(((string)Call(picker, "Terms", menu, 1)).Contains("Another mod controls arrivals"),
             "read-only schedule observer disclosed before confirmation");
         other.UnpatchSelf();

@@ -23,13 +23,20 @@ namespace KingdomCharters
             debt >= 0 && debt <= Start(choice).debt && firstVisit >= 0;
 
         internal static readonly string[] Names =
-            { "Standard Run", "Merchant Charter", "Forester’s Charter", "Mason’s Charter" };
-        internal static readonly string[] Terms =
+            { "Standard Run", "Merchant Charter", "Forester's Charter", "Mason's Charter" };
+        internal static readonly string[] Benefits =
         {
-            "Play with the usual starting resources and caravan schedule.",
-            "First caravan one day early if the gate and guest slot are open. Pay 1 extra coin per immediate pick. Prepaid deliveries are free.",
-            "Gain 3 of the kingdom’s wood equivalent. Repay 2 of its stone equivalent. Review materials at run start.",
-            "Gain 2 of the kingdom’s stone equivalent. Repay 3 of its wood equivalent. Review materials at run start."
+            "Usual starting supplies and caravan schedule.",
+            "First caravan one day early if the gate and guest slot are open.",
+            "Start with 3 extra units of your kingdom's wood equivalent.",
+            "Start with 2 extra units of your kingdom's stone equivalent."
+        };
+        internal static readonly string[] Costs =
+        {
+            "",
+            "Pay 1 extra coin per immediate pick. Prepaid deliveries are free.",
+            "Repay 2 units of its stone equivalent from later deliveries.",
+            "Repay 3 units of its wood equivalent from later deliveries."
         };
 
         // A missed early visit keeps its original appointment. Later appointments stay on schedule.

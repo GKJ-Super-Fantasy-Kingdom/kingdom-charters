@@ -77,8 +77,17 @@ namespace KingdomCharters
             Label(page, review ? "Review Your Charter" : "Kingdom Charters", 30, 16, 780, 52, 36);
             if (review)
             {
-                Label(page, CharterState.Names[selected], 30, 111, 790, 64, 34);
-                Label(page, Terms(selected), 30, 185, 780, 132, 25);
+                Label(page, CharterState.Names[selected], 34, 78, 780, 55, 32);
+                Label(page, selected == (int)Charter.Merchant ? "Caravan Schedule" : "Starting Supplies",
+                    36, 150, 780, 34, 22).color = new Color32(255, 211, 126, 255);
+                Label(page, Benefit(selected), 36, 187, 776, 58, 25);
+                string cost = CharterState.Costs[selected];
+                if (cost.Length != 0)
+                {
+                    Label(page, selected == (int)Charter.Merchant ? "Selection Fee" : "Repayment",
+                        36, 253, 780, 34, 22).color = new Color32(255, 211, 126, 255);
+                    Label(page, cost, 36, 289, 776, 67, 25);
+                }
                 AddButton("Start Run", 365, 70, Commit);
                 AddButton("Back to Charters", 450, 65, Back);
             }
@@ -103,12 +112,16 @@ namespace KingdomCharters
 
         private string Terms(int index)
         {
-            if (index != (int)Charter.Merchant) return CharterState.Terms[index];
-            if (Plugin.DailyCaravan) return "Unavailable while Daily Caravan sets the schedule.";
-            return Merchant.OtherSchedule
-                ? "Another mod controls arrivals. Pay 1 extra coin per immediate pick. Prepaid deliveries are free."
-                : CharterState.Terms[index];
+            if (index == (int)Charter.Merchant && Plugin.DailyCaravan)
+                return "Unavailable while Daily Caravan sets the schedule.";
+            var cost = CharterState.Costs[index];
+            return cost.Length == 0 ? Benefit(index) : Benefit(index) + " " + cost;
         }
+
+        private static string Benefit(int index) =>
+            index == (int)Charter.Merchant && Merchant.OtherSchedule
+                ? "Another mod controls arrivals."
+                : CharterState.Benefits[index];
 
         private void Inspect(int index)
         {
@@ -200,7 +213,8 @@ namespace KingdomCharters
             if (scheme == current) return;
             scheme = current;
             string back = Prompt(Module?.cancel?.action, current, backIcon, "Esc");
-            backHint.text = $"{back}  Back";
+            backHint.text = backIcon.enabled ? "Back" : string.IsNullOrEmpty(back) ? "" : $"{back}  Back";
+            Position(backHint.rectTransform, backIcon.enabled ? 79 : 34, 570, 720, 47);
         }
 
         private static string Prompt(InputAction action, string group, Image image, string keyboardFallback)
@@ -267,11 +281,17 @@ namespace KingdomCharters
             colors.highlightedColor = colors.selectedColor = new Color32(255, 190, 77, 255);
             colors.pressedColor = new Color32(235, 160, 62, 255);
             button.colors = colors;
-            var captionLabel = Label(rect, caption, 20, 7, 752, height - 14, 23);
+            int split = caption.IndexOf('\n');
+            bool choice = split >= 0;
+            if (choice)
+                Label(rect, caption.Substring(0, split), 22, 6, 752, 33, 25).color = Color.white;
+            var captionLabel = choice
+                ? Label(rect, caption.Substring(split + 1), 22, 39, 752, height - 45, 20)
+                : Label(rect, caption, 20, 7, 752, height - 14, 23);
             captionLabel.color = Color.white;
             captionLabel.enableAutoSizing = true;
             captionLabel.fontSizeMin = 17;
-            captionLabel.fontSizeMax = 23;
+            captionLabel.fontSizeMax = choice ? 20 : 23;
             button.onClick.AddListener(() => action());
             buttons.Add(button);
         }

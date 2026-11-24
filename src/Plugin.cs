@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace KingdomCharters
 {
-    [BepInPlugin(Id, "Kingdom Charters", "0.1.0")]
+    [BepInPlugin(Id, "Kingdom Charters", "0.1.2")]
     [BepInDependency("sfk.dailycaravan", BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class Plugin : BaseUnityPlugin
     {
