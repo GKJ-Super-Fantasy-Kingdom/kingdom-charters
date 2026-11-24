@@ -1,33 +1,55 @@
 # Kingdom Charters
 
-At hero selection, press **Play** to choose a charter. Inspect the terms, then choose **Start Run**. Back returns to the same choice. Standard Run is focused each time.
+Start a reign with an early caravan or extra building materials, and choose the cost you are willing to pay. At hero selection, press **Play**, inspect a charter, then choose **Start Run**. **Standard Run** is focused first each time.
 
-| Choice | Terms |
-| --- | --- |
-| Standard Run | Use the usual rules. |
-| Merchant Charter | The first scheduled caravan tries to arrive one day early. Its gate must already be open and the guest slot free. If the early visit cannot take place, the normal appointment stands. Each accepted caravan item costs one extra coin. |
-| Forester’s Charter | Gain 3 wood with starting supplies. Pay the next 2 stone credited to your stores after those supplies. |
-| Mason’s Charter | Gain 2 stone with starting supplies. Pay the next 3 wood credited to your stores after those supplies. |
+![The charter picker showing Standard, Merchant, Forester and Mason](https://raw.githubusercontent.com/GKJ-Super-Fantasy-Kingdom/kingdom-charters/1e914d06eefe7011840a987510deb75e295e0ae1/docs/screenshots/charter-picker.png)
 
-The outstanding material debt appears in the lower-left corner. The charter travels with the run save, including its normal backup. Existing saves open under standard rules. Challenge runs use their own rules. With Daily Caravan loaded, Merchant remains visible with an explanation and cannot be selected. If you enable Daily Caravan during an existing Merchant run, its early visit and item fee are suspended while that mod is loaded.
+*The picker at 1× UI scale. Daily Caravan is enabled in this run, so the Merchant row explains why it is unavailable.*
 
-## Local import and controller playtest
+| Choice | What you get | What you pay |
+| --- | --- | --- |
+| Standard Run | The usual starting supplies and caravan schedule. | No charter cost. |
+| Merchant Charter | The first scheduled caravan can arrive one day early if the gate is open and the guest slot is free. A missed early visit keeps its original appointment. | One extra coin per immediate item pick, on top of its shop price. Browsing, declining and collecting a prepaid commission are free of the charter fee. |
+| Forester’s Charter | Three extra units of the kingdom’s wood equivalent with starting supplies. | The next two units of its stone equivalent delivered to your stores. |
+| Mason’s Charter | Two extra units of the kingdom’s stone equivalent with starting supplies. | The next three units of its wood equivalent delivered to your stores. |
 
-1. In Thunderstore Mod Manager, select **Super Fantasy Kingdom** and open **Test - Mods**. Use **Settings → Import local mod**, choose `KingdomCharters-0.1.0.zip`, and enable the package and its listed dependencies. Coordinate the game session with anyone using this PC before choosing **Start modded**. The manager profile and the in-game save slot are separate. Use an agreed test save for new runs.
-2. At hero selection, choose **Play** using only the controller. Check that Standard Run has focus and that moving through the list exposes both sides of every deal. Open Forester, keep Confirm held, then release. The review should stay open. Back should return to Forester. A fresh Confirm on **Start Run** should start it once.
-3. Repeat the picker using only keyboard, then mouse. Switch devices mid-review and check focus, binding hints and glyphs. Arrow keys, Enter and Escape are keyboard fallbacks.
-4. Compare Forester and Mason with Standard in the same kingdom. Starting supplies should differ by the listed gift. Collect part of the debt, reach a normal save checkpoint, and resume. Check both the remaining debt and stock. Finish the debt and verify the next delivery increases stock normally.
-5. For Merchant, test with Daily Caravan disabled and the gate unlocked. A standard day-16 appointment can move to day 15 if the slot is free. Check for a duplicate on day 16. Browse, decline, try with zero coins, then buy with one coin. Only the accepted item should cost a coin. Enable Daily Caravan for a separate launch and verify the picker explains the unavailable choice.
-6. Start a challenge after a chartered run. Check that it skips the picker, uses normal challenge resources and prices, and that returning to a new normal run focuses Standard.
+## Before taking a supply charter
 
-## Building locally
+At the start of the run, the game names the materials for your kingdom. Choose **Accept Charter** to take the deal or **Standard Run** to decline. A kingdom needs two distinct materials with usable stores. If it lacks a pair, the confirmation explains why Standard Run is the available choice.
 
-Use the installed game assemblies and a Thunderstore profile containing BepInEx 5. Run `dotnet build KingdomCharters.csproj -c Release`, then `python package.py`. Override `GameDir` and `ProfileDir` with MSBuild properties for other installations. The ZIP is written to `dist/`.
+![Forester confirmation offering three Wood in return for two Stone from later deliveries](https://raw.githubusercontent.com/GKJ-Super-Fantasy-Kingdom/kingdom-charters/1e914d06eefe7011840a987510deb75e295e0ae1/docs/screenshots/forester-materials.png)
 
-Run `python tests/smoke.py` on 64-bit Windows to load the packaged DLL in the installed game’s embedded Mono runtime, exercise charter and storage rules, and install and remove the Harmony patches. This offline harness runs without a Unity scene or controller. Mono can print unresolved Unity engine internal-call diagnostics in this mode. The harness returns its assertion result as the exit code.
+*Human Kingdom at 1.5× UI scale. You can still choose Standard Run before receiving the three Wood.*
 
-## Contributing and license
+Starting grants made during the king’s opening callback, the starter screen or the game’s starting-resource grant are included before debt collection begins. The outstanding debt appears at the bottom center of the HUD. For example, if Forester owes one Stone and you receive three, two enter your stock and the debt clears.
 
-Bug reports and pull requests are welcome. See the [contribution guide](CONTRIBUTING.md) for local testing and reporting instructions.
+## Saves and other mods
 
-The original mod code is available under the [MIT License](LICENSE). Super Fantasy Kingdom, its game assets, and third-party dependencies retain their respective licenses and ownership.
+- The choice and remaining debt travel with the run’s save and backup. Restarting day one before the first checkpoint keeps your choice and starts the opening again. Saves created without a charter use standard rules. Challenge runs skip the picker.
+- **Daily Caravan** owns the schedule while it is loaded. Merchant is unavailable for new runs, and both Merchant effects are suspended on an existing Merchant run.
+- With **Caravan Commissions**, prepaid items remain free of the charter fee, including after a deferred delivery.
+- If another mod hooks caravan arrival or eligibility, Merchant leaves the existing schedule in place and retains its immediate-pick fee. The picker shows these terms before you commit. This also applies to mods that only observe those hooks.
+
+## Install and play
+
+Install Kingdom Charters and its listed dependencies in your Super Fantasy Kingdom profile, then choose **Start modded**. For a local ZIP, use **Settings → Import local mod** and select `KingdomCharters-0.1.0.zip`.
+
+Use the game’s menu navigation, Submit and Back actions with a controller. On the review screen, release Submit before pressing it again to start the run. Back returns to the charter you inspected. Mouse selection and the keyboard arrow keys, Enter and Escape also work.
+
+Tested on Windows with Super Fantasy Kingdom 0.8.067. The picker and native confirmation were checked at 1920 × 1080 at 1× and 1.5× UI scales. The controller checks used simulated input through the game’s Input System.
+
+## Building and testing
+
+Build against your installed game and a BepInEx 5 profile, then package and test the Release DLL.
+
+```powershell
+dotnet build KingdomCharters.csproj -c Release
+python package.py
+python tests/smoke.py
+```
+
+The ZIP is written under `dist/`. For other installations, set the MSBuild properties `GameDir` and `ProfileDir`, and pass `--game` and `--profile` to the smoke test. The profile must contain the BepInEx core assemblies. The offline harness uses the installed game’s embedded Mono without launching a player.
+
+For companion regression checks, run `python tests/smoke.py --compat-dlls PATH` with the unpacked ExtraStartingCarrier 1.0.0, CheatMenu 1.0.3, DailyCaravan 0.1.0 and CaravanCommissions 0.1.0 DLLs in one directory. These mods are optional for gameplay.
+
+Bug reports and contributions are welcome. The original mod code is MIT licensed. Super Fantasy Kingdom, its assets and third-party dependencies retain their respective licenses. [Contributing](https://github.com/GKJ-Super-Fantasy-Kingdom/kingdom-charters/blob/main/CONTRIBUTING.md) · [License](https://github.com/GKJ-Super-Fantasy-Kingdom/kingdom-charters/blob/main/LICENSE)
