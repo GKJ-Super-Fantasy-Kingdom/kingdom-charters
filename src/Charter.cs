@@ -27,9 +27,9 @@ namespace KingdomCharters
         internal static readonly string[] Terms =
         {
             "Play with the usual starting resources and caravan schedule.",
-            "Your first scheduled caravan can arrive one day early if the gate is open and the guest slot is free. Each caravan item you accept costs 1 extra coin.",
-            "Start with 3 extra wood. The first 2 stone added to your stores after starting supplies go to the charter.",
-            "Start with 2 extra stone. The first 3 wood added to your stores after starting supplies go to the charter."
+            "First caravan one day early if the gate and guest slot are open. Pay 1 extra coin per immediate pick. Prepaid deliveries are free.",
+            "Gain 3 of the kingdom’s wood equivalent. Repay 2 of its stone equivalent. Review materials at run start.",
+            "Gain 2 of the kingdom’s stone equivalent. Repay 3 of its wood equivalent. Review materials at run start."
         };
 
         // A missed early visit keeps its original appointment. Later appointments stay on schedule.

@@ -9,6 +9,7 @@ using UnityEngine;
 namespace KingdomCharters
 {
     [BepInPlugin(Id, "Kingdom Charters", "0.1.0")]
+    [BepInDependency("sfk.dailycaravan", BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class Plugin : BaseUnityPlugin
     {
         internal const string Id = "gkj.sfk.kingdomcharters";
@@ -24,12 +25,16 @@ namespace KingdomCharters
         internal static bool Merchant => Instance.Run?.choice == Charter.Merchant &&
             MainManager.Instance != null && !MainManager.Instance.IsChallenge() && !DailyCaravan;
 
+        internal void UnsupportedMaterials() =>
+            Logger.LogWarning("This kingdom has no distinct stored wood and stone equivalents. Supply charter suspended.");
+
         private Harmony patches;
 
         private void Awake()
         {
             Instance = this;
             Picker = gameObject.AddComponent<CharterPicker>();
+            gameObject.AddComponent<DebtHud>();
             patches = new Harmony(Id);
             try
             {
@@ -43,13 +48,20 @@ namespace KingdomCharters
             }
         }
 
+        private static readonly AccessTools.FieldRef<TitleScreenHeroSelectionManager, bool> TransitionStarted =
+            AccessTools.FieldRefAccess<TitleScreenHeroSelectionManager, bool>("m_StartedSceneTransition");
+
         internal void StartRun(TitleScreenHeroSelectionManager screen, Charter choice)
         {
             Pending = choice;
             Starting = true;
             try { screen.Play(); }
             catch { Pending = Charter.Standard; throw; }
-            finally { Starting = false; }
+            finally
+            {
+                Starting = false;
+                if (screen != null && !TransitionStarted(screen)) Pending = Charter.Standard;
+            }
         }
 
         private void OnDestroy()
@@ -59,23 +71,18 @@ namespace KingdomCharters
             Instance = null;
         }
 
-        private void OnGUI()
-        {
-            if (Run == null || Run.debt == 0 || GameManager.Instance == null ||
-                !GameManager.Instance.IsGameLoaded() || !Run.openingComplete) return;
-            string type = Run.choice == Charter.Forester ? "stone" : "wood";
-            GUI.Box(new Rect(12, Screen.height - 42, 225, 30), $"Charter due: {Run.debt} {type}");
-        }
+
     }
 
     [HarmonyPatch(typeof(TitleScreenHeroSelectionManager), nameof(TitleScreenHeroSelectionManager.Play))]
     internal static class ChooseBeforePlay
     {
-        private static bool Prefix(TitleScreenHeroSelectionManager __instance, bool ___m_StartedSceneTransition,
+        [HarmonyPriority(Priority.Last)]
+        private static bool Prefix(TitleScreenHeroSelectionManager __instance, bool __runOriginal, bool ___m_StartedSceneTransition,
             CanvasGroup ___totalCanvasGroup, GameObject ___playButton)
         {
             var mod = Plugin.Instance;
-            if (mod.Starting || ___m_StartedSceneTransition || MainManager.Instance.IsChallenge()) return true;
+            if (!__runOriginal || mod.Starting || ___m_StartedSceneTransition || MainManager.Instance.IsChallenge()) return true;
             if (!mod.Picker.IsOpen) mod.Picker.Open(__instance, ___totalCanvasGroup, ___playButton);
             return false;
         }

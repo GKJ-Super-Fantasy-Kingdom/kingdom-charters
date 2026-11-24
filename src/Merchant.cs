@@ -1,7 +1,12 @@
 using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using SuperFantasyKingdom;
 using SuperFantasyKingdom.UI;
+using TMPro;
+using UnityEngine;
 
 namespace KingdomCharters
 {
@@ -29,12 +34,28 @@ namespace KingdomCharters
             }
         }
 
+        private static readonly MethodInfo CheckDay = AccessTools.DeclaredMethod(typeof(GuestCaravan), "CheckDay");
+        private static readonly MethodInfo OnLoad = AccessTools.DeclaredMethod(typeof(GuestCaravan), "OnLoad");
+        private static readonly MethodInfo WeeklyGuest = AccessTools.DeclaredMethod(typeof(WorldManager), "IsTodayGuest");
+
+        // A custom eligibility patch can depend on state other than tomorrow's date.
+        // Let its owner schedule the visit; the item fee remains independent.
+        private static bool CustomSchedule(MethodInfo method)
+        {
+            var patches = Harmony.GetPatchInfo(method);
+            if (patches == null) return false;
+            foreach (var owner in patches.Owners)
+                if (owner != Plugin.Id) return true;
+            return false;
+        }
+        internal static bool OtherSchedule => CustomSchedule(CheckDay) || CustomSchedule(OnLoad) || CustomSchedule(WeeklyGuest);
+
         [HarmonyPatch(typeof(GuestCaravan), "CheckDay")]
         private static class Appointment
         {
             private static void Postfix(GuestCaravan __instance, int day, ref bool __result)
             {
-                if (!Plugin.Merchant) return;
+                if (!Plugin.Merchant || OtherSchedule) return;
                 bool tomorrow = Scheduled(day + 1, __instance);
                 if (!__result && arriving == null && tomorrow && Plugin.Instance.Run.firstVisit == 0)
                     candidate = __instance;
@@ -83,16 +104,17 @@ namespace KingdomCharters
             {
                 if (!Plugin.Merchant || Plugin.Instance.Run.firstVisit != 0 ||
                     WorldManager.Instance.GetGuest() != __instance) return;
-                Plugin.Instance.Run.firstVisit = Scheduled(day, __instance) ? day : day + 1;
+                Plugin.Instance.Run.firstVisit = arriving == __instance ? day + 1 : day;
             }
         }
 
-        // Only the cards constructed inside this caravan's inventory callback receive the fee.
+        // Commissions builds delivery cards in its Reroll prefix and skips vanilla Reroll.
         private static UIOverlayMerchant pricing;
-
         [HarmonyPatch(typeof(GuestCaravan), "Reroll")]
         private static class Inventory
         {
+            [HarmonyPriority(Priority.First)]
+            [HarmonyBefore("gkj.sfk.caravancommissions")]
             private static void Prefix(UIOverlayMerchant merchant, out UIOverlayMerchant __state)
             {
                 __state = pricing;
@@ -102,16 +124,113 @@ namespace KingdomCharters
             private static void Finalizer(UIOverlayMerchant __state) => pricing = __state;
         }
 
+        private sealed class Offer
+        {
+            internal string Item;
+            internal long CoinsRequired;
+            internal bool Paid;
+
+            internal bool CanSelect(int balance) => !Paid && balance >= CoinsRequired;
+        }
+
+        private static readonly ConditionalWeakTable<UICard, Offer> offers = new ConditionalWeakTable<UICard, Offer>();
+        private static Offer selecting;
+        private static readonly AccessTools.FieldRef<UICardItem, TextMeshProUGUI> Description =
+            AccessTools.FieldRefAccess<UICardItem, TextMeshProUGUI>("description");
+
+        // Leave the base cost array, affordability rules and purchase callbacks with their
+        // owner. The native buy button only displays/debits costs[0], and a commission
+        // delivery deliberately disables that debit callback.
         [HarmonyPatch(typeof(UIOverlayMerchant), nameof(UIOverlayMerchant.AddItem))]
         private static class Price
         {
-            private static void Prefix(UIOverlayMerchant __instance, ref ResourceAmount[] costs)
+            private static void Postfix(UIOverlayMerchant __instance, GameObject __result, ResourceAmount[] costs, Item item)
             {
-                if (pricing == null || __instance != pricing) return;
-                if (costs == null || costs.Length == 0)
-                    costs = new[] { new ResourceAmount(ResourceType.Coins, 1) };
-                else if (costs.Length == 1 && costs[0].type == ResourceType.Coins)
-                    costs = new[] { new ResourceAmount(ResourceType.Coins, costs[0].amount + 1) };
+                if (!ReferenceEquals(pricing, __instance) || __result == null) return;
+                var card = __result.GetComponent<UICardItem>();
+                if (card == null) return;
+                var fee = RegisterImmediatePick(__instance, card, item.GetIdentifier(), costs);
+                if (!fee.HasValue) return;
+                var description = Description(card);
+                if (description == null) return;
+                description.text = (fee == 1 ? "Merchant Charter: 1 coin" :
+                    $"Merchant Charter: +1 coin ({fee} coins required)") + "\n" + description.text;
+            }
+        }
+
+        private static readonly Func<UIOverlayMerchant, bool> UsesDefaultPick =
+            AccessTools.MethodDelegate<Func<UIOverlayMerchant, bool>>(AccessTools.DeclaredMethod(typeof(UIOverlayMerchant), "UseCardSelectCallback"));
+
+        private static long? RegisterImmediatePick(UIOverlayMerchant screen, UICardItem card, string id, ResourceAmount[] costs)
+        {
+            // Prepaid/custom reward cards take over fulfillment. Older Commissions
+            // builds these with AddItem and the default pick disabled; newer builds
+            // create their own delivery cards. Neither is a new immediate purchase.
+            if (!ReferenceEquals(pricing, screen) || !UsesDefaultPick(screen) || offers.TryGetValue(card, out _))
+                return null;
+            long required = RequiredCoins(costs);
+            offers.Add(card, new Offer { Item = id, CoinsRequired = required });
+            return required;
+        }
+
+        internal static long RequiredCoins(ResourceAmount[] costs)
+        {
+            long coins = 1;
+            if (costs != null)
+                foreach (var cost in costs)
+                    if (cost.type == ResourceType.Coins && cost.amount > 0) coins += cost.amount;
+            return coins;
+        }
+
+        [HarmonyPatch(typeof(UIOverlayMerchant), "Select", typeof(UICard))]
+        private static class SelectCard
+        {
+            private static bool Prefix(UICard selected) =>
+                !offers.TryGetValue(selected, out var offer) || offer.CanSelect(ResourceManager.Instance.GetCoins());
+        }
+
+        [HarmonyPatch(typeof(UICard), nameof(UICard.Callback))]
+        private static class Dispatch
+        {
+            private static bool Prefix(UICard __instance, out Offer __state)
+            {
+                __state = selecting;
+                selecting = null;
+                if (!offers.TryGetValue(__instance, out var offer)) return true;
+                if (offer.Paid || __state == offer) return false;
+                if (!offer.CanSelect(ResourceManager.Instance.GetCoins()))
+                {
+                    // The selection animation has hidden the buttons. Release the overlay
+                    // without invoking any purchase or delivery callback.
+                    OverlayManager.Instance.CloseOverlay();
+                    return false;
+                }
+                selecting = offer;
+                return true;
+            }
+
+            private static void Finalizer(Offer __state) => selecting = __state;
+        }
+
+        [HarmonyPatch(typeof(ItemManager), nameof(ItemManager.SpawnDragItem))]
+        private static class Delivered
+        {
+            // Daily Caravan inspects grant hooks to decide whether a dawn reward can
+            // be replayed. A suspended Merchant must leave that decision untouched.
+            [HarmonyPrepare]
+            private static bool Prepare() => !Plugin.DailyCaravan;
+
+            private static void Prefix(List<DragItem> ___m_DragItems, out int __state) =>
+                __state = selecting == null ? -1 : ___m_DragItems.Count;
+
+            private static void Postfix(string itemDataName, bool fromSave, List<DragItem> ___m_DragItems, int __state)
+            {
+                var offer = selecting;
+                if (__state < 0 || offer == null || offer.Paid || fromSave || offer.Item != itemDataName ||
+                    ___m_DragItems.Count <= __state) return;
+                offer.Paid = true;
+                ResourceManager.Instance.AddToCoins(-1);
+                ResourceManager.Instance.ResourceAmountChanged(ResourceType.Coins);
             }
         }
     }

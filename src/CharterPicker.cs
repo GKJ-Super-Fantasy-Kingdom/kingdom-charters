@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using SuperFantasyKingdom;
 using SuperFantasyKingdom.TitleScreen;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -17,9 +18,12 @@ namespace KingdomCharters
         private CanvasGroup underlying;
         private GameObject play, root;
         private RectTransform panel, page;
-        private Font font;
-        private Image submitIcon, backIcon;
-        private Text submitHint, backHint;
+        private TMP_FontAsset font;
+        private Sprite buttonSkin;
+        private CanvasScaler scaler;
+        private Image backIcon;
+        private RectTransform focusMarker;
+        private TMP_Text backHint;
         private string scheme;
         private bool review, interactable, raycasts, waitForRelease;
         private int selected, changedFrame = -1, backFrame = -1;
@@ -38,22 +42,29 @@ namespace KingdomCharters
             raycasts = group.blocksRaycasts;
             selected = 0;
             review = false;
-            font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            var nativeText = play.GetComponentInChildren<TMP_Text>(true) ?? screen.GetComponentInChildren<TMP_Text>(true);
+            font = nativeText != null ? nativeText.font : TMP_Settings.defaultFontAsset;
+            buttonSkin = (play.GetComponent<Button>()?.targetGraphic as Image)?.sprite;
             root = new GameObject("Kingdom Charters", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             var canvas = root.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 32000;
-            var scaler = root.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1000, 720);
-            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
-            var shade = Box(root.transform, "Backdrop", new Color(0.03f, 0.04f, 0.05f, 0.90f));
+            scaler = root.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
+            ScaleToScreen();
+            var shade = Box(root.transform, "Backdrop", new Color(0.03f, 0.04f, 0.05f, 0.69f));
             Stretch(shade);
             panel = Box(shade, "Charter menu", Ink);
             panel.sizeDelta = new Vector2(852, 644);
             group.interactable = false;
             group.blocksRaycasts = false;
             Draw();
+        }
+
+        private void ScaleToScreen()
+        {
+            float preferred = SettingsManager.Instance != null ? SettingsManager.Instance.GetUIScaling() : 1f;
+            scaler.scaleFactor = Mathf.Min(Mathf.Max(preferred, 1f), Screen.width / 876f, Screen.height / 668f);
         }
 
         private void Draw()
@@ -63,13 +74,13 @@ namespace KingdomCharters
             buttons.Clear();
             page = Child(panel, "Choices");
             Stretch(page);
-            Label(page, review ? "Review your charter" : "Kingdom Charters", 30, 16, 780, 52, 36);
+            Label(page, review ? "Review Your Charter" : "Kingdom Charters", 30, 16, 780, 52, 36);
             if (review)
             {
                 Label(page, CharterState.Names[selected], 30, 111, 790, 64, 34);
                 Label(page, Terms(selected), 30, 185, 780, 132, 25);
                 AddButton("Start Run", 365, 70, Commit);
-                AddButton("Back to charters", 450, 65, Back);
+                AddButton("Back to Charters", 450, 65, Back);
             }
             else
             {
@@ -78,20 +89,26 @@ namespace KingdomCharters
                     int index = i;
                     AddButton(CharterState.Names[i] + "\n" + Terms(i), 78 + i * 101, 92, () => Inspect(index));
                 }
-                AddButton("Back to hero selection", 491, 55, Back);
+                AddButton("Back to Hero Selection", 491, 55, Back);
             }
             WireNavigation();
-            submitIcon = Icon(34);
-            backIcon = Icon(420);
-            submitHint = Label(page, "", 79, 570, 335, 47, 19);
-            backHint = Label(page, "", 465, 570, 340, 47, 19);
+            backIcon = Icon(34);
+            backHint = Label(page, "", 79, 570, 720, 47, 19);
             scheme = null;
             RefreshPrompts();
+            focusMarker = Box(page, "Focused choice", new Color32(255, 208, 83, 255));
+            focusMarker.GetComponent<Image>().raycastTarget = false;
             Focus(review ? 0 : selected);
         }
 
-        private string Terms(int index) => index == (int)Charter.Merchant && Plugin.DailyCaravan
-            ? "Unavailable with Daily Caravan. " + CharterState.Terms[index] : CharterState.Terms[index];
+        private string Terms(int index)
+        {
+            if (index != (int)Charter.Merchant) return CharterState.Terms[index];
+            if (Plugin.DailyCaravan) return "Unavailable while Daily Caravan sets the schedule.";
+            return Merchant.OtherSchedule
+                ? "Another mod controls arrivals. Pay 1 extra coin per immediate pick. Prepaid deliveries are free."
+                : CharterState.Terms[index];
+        }
 
         private void Inspect(int index)
         {
@@ -144,6 +161,7 @@ namespace KingdomCharters
         {
             if (!IsOpen) return;
             if (screen == null) { Close(); return; }
+            ScaleToScreen();
             var module = Module;
             var keyboard = Keyboard.current;
             if (waitForRelease && module?.submit?.action?.IsPressed() != true) waitForRelease = false;
@@ -166,6 +184,7 @@ namespace KingdomCharters
             if (focused < 0) Focus(review ? 0 : selected);
             else
             {
+                PlaceFocusMarker(focused);
                 if (!review && focused < CharterState.Names.Length) selected = focused;
                 var pad = GamepadManager.Instance;
                 if (pad != null && pad.GetGameObjectToSelect() != buttons[focused].gameObject)
@@ -180,9 +199,7 @@ namespace KingdomCharters
             string current = input?.currentControlScheme ?? "";
             if (scheme == current) return;
             scheme = current;
-            string ok = Prompt(Module?.submit?.action, current, submitIcon, "Enter");
             string back = Prompt(Module?.cancel?.action, current, backIcon, "Esc");
-            submitHint.text = $"{ok}  {(review ? "Confirm" : "Inspect choice")}";
             backHint.text = $"{back}  Back";
         }
 
@@ -211,9 +228,18 @@ namespace KingdomCharters
         private void Step(int delta) => Focus((Math.Max(0, FocusIndex()) + delta + buttons.Count) % buttons.Count);
         private void Focus(int index)
         {
+            PlaceFocusMarker(index);
             var target = buttons[index].gameObject;
             GamepadManager.Instance?.SetGameObjectToSelect(target, true);
             EventSystem.current?.SetSelectedGameObject(target);
+        }
+
+        private void PlaceFocusMarker(int index)
+        {
+            if (focusMarker == null) return;
+            var row = (RectTransform)buttons[index].transform;
+            Position(focusMarker, 32, Mathf.RoundToInt(-row.anchoredPosition.y) + 12, 5,
+                Mathf.RoundToInt(row.sizeDelta.y) - 24);
         }
 
         private void WireNavigation()
@@ -230,15 +256,22 @@ namespace KingdomCharters
             Position(rect, 28, y, 796, height);
             var button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = rect.GetComponent<Image>();
+            var face = (Image)button.targetGraphic;
+            if (buttonSkin != null)
+            {
+                face.sprite = buttonSkin;
+                face.type = Image.Type.Sliced;
+            }
             var colors = button.colors;
-            colors.normalColor = new Color32(56, 65, 67, 255);
-            colors.highlightedColor = colors.selectedColor = new Color32(102, 87, 48, 255);
-            colors.pressedColor = new Color32(132, 105, 55, 255);
+            colors.normalColor = new Color32(182, 196, 207, 255);
+            colors.highlightedColor = colors.selectedColor = new Color32(255, 190, 77, 255);
+            colors.pressedColor = new Color32(235, 160, 62, 255);
             button.colors = colors;
-            var captionLabel = Label(rect, caption, 18, 1, 758, height - 2, 21);
-            captionLabel.resizeTextForBestFit = true;
-            captionLabel.resizeTextMinSize = 16;
-            captionLabel.resizeTextMaxSize = 21;
+            var captionLabel = Label(rect, caption, 20, 7, 752, height - 14, 23);
+            captionLabel.color = Color.white;
+            captionLabel.enableAutoSizing = true;
+            captionLabel.fontSizeMin = 17;
+            captionLabel.fontSizeMax = 23;
             button.onClick.AddListener(() => action());
             buttons.Add(button);
         }
@@ -253,16 +286,16 @@ namespace KingdomCharters
             return img;
         }
 
-        private Text Label(Transform parent, string value, int x, int y, int w, int h, int size)
+        private TMP_Text Label(Transform parent, string value, int x, int y, int w, int h, int size)
         {
             var rt = Child(parent, "Label");
             Position(rt, x, y, w, h);
-            var label = rt.gameObject.AddComponent<Text>();
+            var label = rt.gameObject.AddComponent<TextMeshProUGUI>();
             label.text = value;
             label.font = font;
             label.fontSize = size;
             label.color = Paper;
-            label.alignment = TextAnchor.MiddleLeft;
+            label.alignment = TextAlignmentOptions.MidlineLeft;
             label.raycastTarget = false;
             return label;
         }

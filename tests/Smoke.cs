@@ -10,7 +10,7 @@ internal static class Smoke
     private const BindingFlags All = BindingFlags.Instance | BindingFlags.Static |
         BindingFlags.Public | BindingFlags.NonPublic;
 
-    private static void Check(bool value, string what)
+    internal static void Check(bool value, string what)
     {
         if (!value) throw new Exception(what);
         Console.WriteLine("PASS " + what);
@@ -84,11 +84,13 @@ internal static class Smoke
                 plugin.ConstructorArguments[2].Value.ToString() == version, "packaged DLL and plugin versions");
             Rules(mod);
             Storage(mod);
-            var harmony = new Harmony("kingdomcharters.offline.check");
+            var harmony = new Harmony("gkj.sfk.kingdomcharters");
+            Interactions.ConfigureLoader(mod);
             harmony.PatchAll(mod);
             var targets = harmony.GetPatchedMethods().ToArray();
             foreach (var m in targets) Console.WriteLine("PATCH " + m.DeclaringType.Name + "." + m.Name);
-            Check(targets.Length == 16, "16 patches installed against the game assemblies");
+            Check(targets.Length == 25, "25 patches installed against the game assemblies");
+            Interactions.Run(mod, args[2]);
             harmony.UnpatchSelf();
             Check(!harmony.GetPatchedMethods().Any(), "patches removed");
             return 0;
