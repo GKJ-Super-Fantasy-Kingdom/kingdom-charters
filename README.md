@@ -44,3 +44,7 @@ Captured in Kingdom Charters 0.1.2 on Super Fantasy Kingdom 0.8.068 at 1920 × 1
 3. Launch with **Start modded** and choose **Play** at hero selection for a new normal run.
 
 Bug reports and contributions are welcome. The original mod code is MIT licensed. Super Fantasy Kingdom, its assets and third-party dependencies retain their respective licenses. [Contributing](https://github.com/GKJ-Super-Fantasy-Kingdom/kingdom-charters/blob/main/CONTRIBUTING.md) · [License](https://github.com/GKJ-Super-Fantasy-Kingdom/kingdom-charters/blob/main/LICENSE)
+
+## Support
+
+[Support GKJ Games on Ko-fi](https://ko-fi.com/gkj_games)

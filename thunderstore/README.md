@@ -42,3 +42,7 @@ Captured in Kingdom Charters 0.1.2 on Super Fantasy Kingdom 0.8.068 at 1920 × 1
 1. Choose **Install with App** and select your Super Fantasy Kingdom profile.
 2. Enable Kingdom Charters and both required packages, [BepInExPack](https://thunderstore.io/c/super-fantasy-kingdom/p/BepInEx/BepInExPack/) 5.4.2305 and [HideManagerGameObject Config](https://thunderstore.io/c/super-fantasy-kingdom/p/BepInEx/HideManagerGameObject_Config/) 5.4.2304.
 3. Launch with **Start modded** and choose **Play** at hero selection for a new normal run.
+
+## Support
+
+[Support GKJ Games on Ko-fi](https://ko-fi.com/gkj_games)
