@@ -1,11 +1,15 @@
 # Changelog
 
+## 0.1.3
+
+Clarify the mod’s description and compatibility for players.
+
 ## 0.1.2
 
 - The charter picker groups opening benefits and later costs on review. The Back prompt uses one native glyph or its text fallback.
 - The debt badge shows the kingdom's owed material icon alongside the remaining balance.
 
-## 0.1.1 (Local Test Build)
+## 0.1.1
 
 - The material debt badge clears the visible unit cards at the bottom of the HUD.
 

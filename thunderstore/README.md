@@ -26,16 +26,14 @@ At hero selection, choose a charter for your next run. Bring the first caravan f
 
 *1.5× UI scale. The badge shows the two Stone still due. The unit cards below it and the compact resource ledger at the top remain readable.*
 
-Captured in Kingdom Charters 0.1.2 on Super Fantasy Kingdom 0.8.068 at 1920 × 1080 on Windows, using a virtual Xbox-style controller. The map capture uses a copied day-10 save with the debt restored for the screenshot.
-
 ## Compatibility
 
-- Challenge runs skip the picker. Existing saves without a charter continue under standard rules.
-- Supply charters require two distinct materials with usable stores. If the kingdom lacks a pair, the opening confirmation offers Standard Run. Debt collection begins after opening grants from the king’s dialogue, the starter screen and the game’s starting-resource grant.
-- The debt badge clears the compact strip and expanded ledger in [Daybook](https://thunderstore.io/c/super-fantasy-kingdom/p/GKJ/Daybook/).
-- [Daily Caravan](https://thunderstore.io/c/super-fantasy-kingdom/p/GKJ/DailyCaravan/) makes Merchant unavailable for new runs. Loading it during an existing Merchant run suspends both the early arrival and the extra fee.
-- [Caravan Commissions](https://thunderstore.io/c/super-fantasy-kingdom/p/GKJ/CaravanCommissions/) deliveries are prepaid. Collecting one costs no charter fee, even after deferring it. If another mod hooks caravan arrival or eligibility, Merchant keeps the existing schedule and its immediate-pick fee. The picker shows those terms before you commit.
-- With [ExtraStartingCarrier](https://thunderstore.io/c/super-fantasy-kingdom/p/ownlyme/ExtraStartingCarrier/) 1.0.0, the extra carrier and the charter supplies each apply once. With [CheatMenu](https://thunderstore.io/c/super-fantasy-kingdom/p/ILM/CheatMenu/) 1.0.3, the charter takes only the outstanding debt from the adjusted production yield. Offline checks covered 1× and 3× yield.
+- Works with Super Fantasy Kingdom **0.8.068** and the other [GKJ mods](https://thunderstore.io/c/super-fantasy-kingdom/p/GKJ/).
+- Challenges keep their own starting rules. Existing kingdoms without a charter continue under standard rules.
+- Supply charters use your kingdom’s material equivalents. If the kingdom lacks two eligible materials, you can choose **Standard Run**. Other opening grants are issued before debt collection starts.
+- [Daily Caravan](https://thunderstore.io/c/super-fantasy-kingdom/p/GKJ/DailyCaravan/) takes precedence over the Merchant Charter’s earlier arrival. The extra coin applies to an immediate item pick, while prepaid [Caravan Commissions](https://thunderstore.io/c/super-fantasy-kingdom/p/GKJ/CaravanCommissions/) deliveries carry no additional fee.
+- [Visitor Calendar](https://thunderstore.io/c/super-fantasy-kingdom/p/GKJ/VisitorCalendar/) shows an early arrival once the date is known. The debt badge shares HUD space with [Daybook](https://thunderstore.io/c/super-fantasy-kingdom/p/GKJ/Daybook/).
+- These community mods can share the same profile. [Achievement Enabler](https://thunderstore.io/c/super-fantasy-kingdom/p/ownlyme/AchievementEnabler/), [Bakery Uses Wheat](https://thunderstore.io/c/super-fantasy-kingdom/p/ownlyme/BakeryUsesWheat/), [More Relics](https://thunderstore.io/c/super-fantasy-kingdom/p/ownlyme/MoreRelics/), [Right Click Skip](https://thunderstore.io/c/super-fantasy-kingdom/p/ownlyme/RightClickSkip/), and [Tavern Food Priorities](https://thunderstore.io/c/super-fantasy-kingdom/p/ownlyme/TavernFoodPriorities/).
 
 ## Installation
 
