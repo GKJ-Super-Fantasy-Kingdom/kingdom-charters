@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>0.1.3</Version>
+    <Version>0.1.4</Version>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <GameDir Condition="'$(GameDir)' == ''">D:\SteamLibrary\steamapps\common\Super Fantasy Kingdom</GameDir>
     <ProfileDir Condition="'$(ProfileDir)' == ''">$(APPDATA)\Thunderstore Mod Manager\DataFolder\SuperFantasyKingdom\profiles\Test - Mods</ProfileDir>
@@ -9,11 +9,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="src/*.cs" />
+    <EmbeddedResource Include="src/Art/*Frame.png" LogicalName="KingdomCharters.Art.%(Filename)" />
     <Reference Include="BepInEx;0Harmony">
       <HintPath>$(ProfileDir)\BepInEx\core\%(Identity).dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="Assembly-CSharp;Newtonsoft.Json;UnityEngine;Unity.TextMeshPro;Unity.InputSystem;UnityEngine.CoreModule;UnityEngine.UI;UnityEngine.UIModule;UnityEngine.TextRenderingModule;Unity.Localization;UnityEngine.JSONSerializeModule;UnityEngine.IMGUIModule">
+    <Reference Include="Assembly-CSharp;Newtonsoft.Json;UnityEngine;Unity.TextMeshPro;Unity.InputSystem;UnityEngine.CoreModule;UnityEngine.ImageConversionModule;UnityEngine.UI;UnityEngine.UIModule;UnityEngine.TextRenderingModule;Unity.Localization;UnityEngine.JSONSerializeModule;UnityEngine.IMGUIModule">
       <HintPath>$(ManagedDir)\%(Identity).dll</HintPath>
       <Private>false</Private>
     </Reference>

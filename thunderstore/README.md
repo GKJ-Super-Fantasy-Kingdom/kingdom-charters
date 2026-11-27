@@ -12,35 +12,46 @@ At hero selection, choose a charter for your next run. Bring the first caravan f
 
 ## How to Use
 
-1. Choose **Play** at hero selection. The picker starts on **Standard Run**. Move with the D-pad or the up and down arrow keys. Press **A** on an Xbox-style controller, press **Enter**, or click a row to review its terms.
-2. Choose **Start Run** to confirm. Release the confirm button between selecting a charter and starting the run. To compare another charter, use **B**, **Escape**, or the on-screen **Back to Charters** button.
+1. Choose **Play** at hero selection. The chooser starts on **Standard Run**. Compare the cards with the D-pad or left and right arrow keys. Press **A** on an Xbox-style controller, press **Enter**, or click a card to review its terms. Dimmed cards explain why they are unavailable.
+2. Choose **Start Run** to confirm. Release the confirm button between selecting a charter and starting the run. To compare another charter, use **B**, **Escape**, or **Back to Charters**. Use **Back to Selection** on the chooser to return to hero selection.
 3. For Forester or Mason, check the material names at the start of the run. **Accept Charter** takes the deal. **Standard Run** declines it. The choice and outstanding debt follow the run through saves and reloads. Restarting day one before the first checkpoint keeps the choice and resets its opening supplies and debt.
 
 ## Screenshots
 
-![Forester selected in the charter picker, with the opening wood grant and later stone repayment visible](https://raw.githubusercontent.com/GKJ-Super-Fantasy-Kingdom/kingdom-charters/main/docs/screenshots/0.1.2/charter-picker.png)
+Captured in Super Fantasy Kingdom 0.8.069 with a virtual controller.
 
-*1× UI scale. Compare Forester’s terms with Mason’s in the next row. The Merchant row explains why it is unavailable in this run.*
+![Human charter chooser at 1× with four cards and Back to Selection focused.](https://raw.githubusercontent.com/GKJ-Super-Fantasy-Kingdom/kingdom-charters/b91554f8e2922da257e1a9d400cbb1c611ffa81e/docs/screenshots/current/human-charter-selection-1x.png)
 
-![A stone icon and two-Stone charter balance above the raised unit card on the Human kingdom map](https://raw.githubusercontent.com/GKJ-Super-Fantasy-Kingdom/kingdom-charters/main/docs/screenshots/0.1.2/forester-debt.png)
+*Human, 1×. Each card shows its terms. Merchant is dimmed because Daily Caravan sets the schedule.*
 
-*1.5× UI scale. The badge shows the two Stone still due. The unit cards below it and the compact resource ledger at the top remain readable.*
+![Undead Forester’s Charter review at 1.5× with Start Run focused.](https://raw.githubusercontent.com/GKJ-Super-Fantasy-Kingdom/kingdom-charters/b91554f8e2922da257e1a9d400cbb1c611ffa81e/docs/screenshots/current/undead-charter-review-1p5x.png)
+
+*Undead, 1.5×. Review the supply grant and repayment before confirming Start Run.*
+
+### Charter Cards
+
+The individual cards are cropped from 1.5× in-game renders.
+
+| Charter | Rules | Card |
+| --- | --- | --- |
+| Standard Run | Usual starting supplies, caravan schedule and prices. | ![Steel-blue Standard Run card with a crown shield.](https://raw.githubusercontent.com/GKJ-Super-Fantasy-Kingdom/kingdom-charters/b91554f8e2922da257e1a9d400cbb1c611ffa81e/docs/screenshots/cards/standard-run.png) |
+| Merchant Charter | The first scheduled caravan can arrive one day early. Immediate picks cost 1 extra coin. | ![Copper Merchant Charter card with a covered wagon.](https://raw.githubusercontent.com/GKJ-Super-Fantasy-Kingdom/kingdom-charters/b91554f8e2922da257e1a9d400cbb1c611ffa81e/docs/screenshots/cards/merchant.png) |
+| Forester’s Charter | Gain 3 wood-equivalent materials. Repay 2 stone-equivalent materials from later deliveries. | ![Green Forester’s Charter card with two trees and the supply terms.](https://raw.githubusercontent.com/GKJ-Super-Fantasy-Kingdom/kingdom-charters/b91554f8e2922da257e1a9d400cbb1c611ffa81e/docs/screenshots/cards/forester.png) |
+| Mason’s Charter | Gain 2 stone-equivalent materials. Repay 3 wood-equivalent materials from later deliveries. | ![Purple Mason’s Charter card with a stone peak and the supply terms.](https://raw.githubusercontent.com/GKJ-Super-Fantasy-Kingdom/kingdom-charters/b91554f8e2922da257e1a9d400cbb1c611ffa81e/docs/screenshots/cards/mason.png) |
 
 ## Compatibility
 
-- Works with Super Fantasy Kingdom **0.8.068** and the other [GKJ mods](https://thunderstore.io/c/super-fantasy-kingdom/p/GKJ/).
-- Challenges keep their own starting rules. Existing kingdoms without a charter continue under standard rules.
-- Supply charters use your kingdom’s material equivalents. If the kingdom lacks two eligible materials, you can choose **Standard Run**. Other opening grants are issued before debt collection starts.
-- [Daily Caravan](https://thunderstore.io/c/super-fantasy-kingdom/p/GKJ/DailyCaravan/) takes precedence over the Merchant Charter’s earlier arrival. The extra coin applies to an immediate item pick, while prepaid [Caravan Commissions](https://thunderstore.io/c/super-fantasy-kingdom/p/GKJ/CaravanCommissions/) deliveries carry no additional fee.
-- [Visitor Calendar](https://thunderstore.io/c/super-fantasy-kingdom/p/GKJ/VisitorCalendar/) shows an early arrival once the date is known. The debt badge shares HUD space with [Daybook](https://thunderstore.io/c/super-fantasy-kingdom/p/GKJ/Daybook/).
-- These community mods can share the same profile. [Achievement Enabler](https://thunderstore.io/c/super-fantasy-kingdom/p/ownlyme/AchievementEnabler/), [Bakery Uses Wheat](https://thunderstore.io/c/super-fantasy-kingdom/p/ownlyme/BakeryUsesWheat/), [More Relics](https://thunderstore.io/c/super-fantasy-kingdom/p/ownlyme/MoreRelics/), [Right Click Skip](https://thunderstore.io/c/super-fantasy-kingdom/p/ownlyme/RightClickSkip/), and [Tavern Food Priorities](https://thunderstore.io/c/super-fantasy-kingdom/p/ownlyme/TavernFoodPriorities/).
+- Verified on Super Fantasy Kingdom **0.8.070**. Challenge runs use their own rules. Existing saves without a charter continue under standard rules.
+- Supply charters require two distinct materials with usable stores. If the kingdom lacks a pair, the opening confirmation offers Standard Run. Debt collection begins after opening grants from the king’s dialogue, the starter screen and the game’s starting-resource grant.
+- [Visitor Calendar](https://thunderstore.io/c/super-fantasy-kingdom/p/GKJ/VisitorCalendar/) shows an early arrival once the date is known. The debt badge clears the compact strip and expanded ledger in [Daybook](https://thunderstore.io/c/super-fantasy-kingdom/p/GKJ/Daybook/).
+- [Daily Caravan](https://thunderstore.io/c/super-fantasy-kingdom/p/GKJ/DailyCaravan/) makes Merchant unavailable for new runs. Loading it during an existing Merchant run suspends both the early arrival and the extra fee.
+- [Caravan Commissions](https://thunderstore.io/c/super-fantasy-kingdom/p/GKJ/CaravanCommissions/) deliveries are prepaid. Collecting one costs no charter fee, even after deferring it. If another mod hooks caravan arrival or eligibility, Merchant keeps the existing schedule and its immediate-pick fee. The picker shows those terms before you commit.
+- [ExtraStartingCarrier](https://thunderstore.io/c/super-fantasy-kingdom/p/ownlyme/ExtraStartingCarrier/) can add its carrier alongside the starting charter. With [CheatMenu](https://thunderstore.io/c/super-fantasy-kingdom/p/ILM/CheatMenu/) yield changes, the charter takes only the outstanding repayment from the adjusted delivery.
 
 ## Installation
 
 1. Choose **Install with App** and select your Super Fantasy Kingdom profile.
 2. Enable Kingdom Charters and both required packages, [BepInExPack](https://thunderstore.io/c/super-fantasy-kingdom/p/BepInEx/BepInExPack/) 5.4.2305 and [HideManagerGameObject Config](https://thunderstore.io/c/super-fantasy-kingdom/p/BepInEx/HideManagerGameObject_Config/) 5.4.2304.
 3. Launch with **Start modded** and choose **Play** at hero selection for a new normal run.
-
-## Support
 
 [Support GKJ Games on Ko-fi](https://ko-fi.com/gkj_games)

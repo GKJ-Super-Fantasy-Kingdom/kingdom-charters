@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.4
+
+- Compare four illustrated charters side by side. Unavailable options show their reason, and Back returns focus to the previous card.
+- Review a charter before starting your run. Larger illustrations, matching focus outlines and a compact Back footer keep the title screen in view.
+- Start Run, Back, and actionable charter cards show a stepped white edge during hover, focus, or press.
+- Preserve the selected charter and outstanding debt through native Save and Continue on Super Fantasy Kingdom 0.8.070. Tavern checkpoints retain the game’s normal backup behavior.
+
 ## 0.1.3
 
 Clarify the mod’s description and compatibility for players.

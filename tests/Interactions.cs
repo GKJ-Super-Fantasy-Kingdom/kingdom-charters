@@ -335,18 +335,54 @@ internal static class Interactions
         other.UnpatchSelf();
         other.Patch(day, postfix: new HarmonyMethod(typeof(Interactions), "Observer"));
         var picker = mod.GetType("KingdomCharters.CharterPicker");
-        var menu = FormatterServices.GetUninitializedObject(picker);
-        var forester = (string)Call(picker, "Terms", menu, 2);
-        var mason = (string)Call(picker, "Terms", menu, 3);
-        Smoke.Check(forester.Contains("3 extra") && forester.Contains("Repay 2") &&
-            mason.Contains("2 extra") && mason.Contains("Repay 3") &&
-            forester.Contains("later deliveries") && mason.Contains("later deliveries"),
-            "picker compares both supply grants and later repayment amounts");
-        Smoke.Check(((string)Call(picker, "Terms", menu, 1)).Contains("Another mod controls arrivals"),
+        Smoke.Check(((string)Call(picker, "Benefit", null, 1)).Contains("Another mod controls arrivals"),
             "read-only schedule observer disclosed before confirmation");
         other.UnpatchSelf();
-        Smoke.Check(((string)Call(picker, "Terms", menu, 1)).Contains("one day early"),
+        Smoke.Check(((string)Call(picker, "Benefit", null, 1)).Contains("one day early"),
             "ordinary Merchant terms return without an external scheduler");
+    }
+
+    private static void CharterCards()
+    {
+        var picker = mod.GetType("KingdomCharters.CharterPicker");
+        var race = RaceManager.Instance;
+        var costs = (string[])AccessTools.Field(state, "Costs").GetValue(null);
+        Smoke.Check(((string)Call(picker, "Benefit", null, 2)).Contains("3 extra") && costs[2].Contains("Repay 2") &&
+            ((string)Call(picker, "Benefit", null, 3)).Contains("2 extra") && costs[3].Contains("Repay 3"),
+            "cards preserve the two original supply trades");
+        foreach (var kingdom in new[] { Races.Human, Races.Undead })
+        {
+            Set(race, "race", kingdom);
+            Smoke.Check(Call(picker, "AvailabilityReason", null, 0, race) == null &&
+                Call(picker, "AvailabilityReason", null, 2, race) == null &&
+                Call(picker, "AvailabilityReason", null, 3, race) == null,
+                kingdom + " fixture with two stored materials offers Standard and both supply charters");
+        }
+
+        Set(race, "resourceStone", Material(ResourceType.Board));
+        Smoke.Check(Call(picker, "AvailabilityReason", null, 0, race) == null &&
+            ((string)Call(picker, "AvailabilityReason", null, 2, race)).Contains("distinct stored materials") &&
+            ((string)Call(picker, "AvailabilityReason", null, 3, race)).Contains("distinct stored materials"),
+            "identical slots disable both supply cards and keep Standard selectable");
+        Set(race, "resourceStone", Material(ResourceType.Stone));
+        race.GetResourceData(ResourceType.Stone).buildingToTakeFrom = BuildingType.None;
+        Smoke.Check(Call(picker, "AvailabilityReason", null, 0, race) == null &&
+            Call(picker, "AvailabilityReason", null, 3, race) != null,
+            "missing store disables a supply card and keeps Standard selectable");
+
+        var menu = FormatterServices.GetUninitializedObject(picker);
+        var cards = Enumerable.Range(0, 4).Select(_ => SceneObject<UnityEngine.UI.Button>()).ToList();
+        for (int i = 0; i < cards.Count; i++) Set(cards[i], "m_Interactable", i != 1);
+        Set(menu, "buttons", cards);
+        Smoke.Check(ReferenceEquals(Call(picker, "Neighbor", menu, 0, 1), cards[2]) &&
+            ReferenceEquals(Call(picker, "Neighbor", menu, 2, -1), cards[0]) &&
+            Call(picker, "Neighbor", menu, 3, 1) == null,
+            "horizontal card navigation skips unavailable choices in either direction");
+
+        string[] assets = mod.GetManifestResourceNames();
+        foreach (string name in new[] { "Standard", "Merchant", "Forester", "Mason" })
+            Smoke.Check(assets.Contains("KingdomCharters.Art." + name + "Frame"),
+                name + " frame embedded in the packaged DLL");
     }
 
     private static readonly List<UICardItem> deliveryCards = new List<UICardItem>();
@@ -534,6 +570,8 @@ internal static class Interactions
         Smoke.Check(!(bool)AccessTools.Property(supplies, "HasMaterialPair").GetValue(null, null) &&
             ((string)Call(supplies, "MaterialTerms", null, mason)).Contains("Standard Run"),
             "identical material slots explain the required standard fallback");
+        Set(RaceManager.Instance, "resourceStone", Material(ResourceType.Stone));
+        CharterCards();
         Opening(false, "Forester", false);
         Reload();
         Opening(false, "Mason", true);
@@ -567,8 +605,7 @@ internal static class Interactions
                 var observer = new Harmony("gkj.sfk.caravancommissions");
                 observer.CreateClassProcessor(scheduledArrival).Patch();
                 var picker = mod.GetType("KingdomCharters.CharterPicker");
-                var menu = FormatterServices.GetUninitializedObject(picker);
-                Smoke.Check(((string)Call(picker, "Terms", menu, 1)).Contains("Another mod controls arrivals"),
+                Smoke.Check(((string)Call(picker, "Benefit", null, 1)).Contains("Another mod controls arrivals"),
                     "Commissions arrival observer discloses retained scheduling");
                 observer.UnpatchSelf();
             }
@@ -579,6 +616,10 @@ internal static class Interactions
             Chainloader.PluginInfos.Add(metadata.GUID, new PluginInfo());
             Smoke.Check(!(bool)AccessTools.Property(pluginType, "Merchant").GetValue(null, null),
                 "restored Merchant suspends its fee and schedule when Daily Caravan is registered");
+            var cardPicker = mod.GetType("KingdomCharters.CharterPicker");
+            Smoke.Check(Call(cardPicker, "AvailabilityReason", null, 0, RaceManager.Instance) == null &&
+                ((string)Call(cardPicker, "AvailabilityReason", null, 1, RaceManager.Instance)).Contains("Daily Caravan"),
+                "Daily Caravan disables Merchant with a reason and leaves Standard selectable");
             var visit = daily.GetType("DailyCaravan.Visit", true);
             Smoke.Check((bool)Call(visit, "AddsVisit", null, 16, 16, true, true, false),
                 "Daily Caravan binary permits the unlocked day-16 visit");

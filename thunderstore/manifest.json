@@ -1,6 +1,6 @@
 {
   "name": "KingdomCharters",
-  "version_number": "0.1.3",
+  "version_number": "0.1.4",
   "website_url": "https://github.com/GKJ-Super-Fantasy-Kingdom/kingdom-charters",
   "description": "Choose a starting deal. Borrow building supplies against future deliveries, pay extra for an early caravan, or keep the standard start.",
   "dependencies": [

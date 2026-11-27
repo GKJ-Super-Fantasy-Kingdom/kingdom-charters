@@ -29,12 +29,7 @@ namespace KingdomCharters
             var run = Plugin.Instance.Run;
             gift = owed = ResourceType.None;
             if (run == null || (run.choice != Charter.Forester && run.choice != Charter.Mason)) return;
-            var race = RaceManager.Instance;
-            var wood = race.GetResourceData(ResourceType.Wood)?.type ?? ResourceType.None;
-            var stone = race.GetResourceData(ResourceType.Stone)?.type ?? ResourceType.None;
-            if (wood == stone || wood == ResourceType.None || stone == ResourceType.None ||
-                race.GetBuildingTypeToTakeFrom(wood) == BuildingType.None ||
-                race.GetBuildingTypeToTakeFrom(stone) == BuildingType.None)
+            if (!TryMaterials(RaceManager.Instance, out var wood, out var stone))
             {
                 Plugin.Instance.UnsupportedMaterials();
                 return;
@@ -42,6 +37,15 @@ namespace KingdomCharters
             gift = run.choice == Charter.Forester ? wood : stone;
             owed = run.choice == Charter.Forester ? stone : wood;
             ResetBalance();
+        }
+
+        internal static bool TryMaterials(RaceManager race, out ResourceType wood, out ResourceType stone)
+        {
+            wood = race.GetResourceData(ResourceType.Wood)?.type ?? ResourceType.None;
+            stone = race.GetResourceData(ResourceType.Stone)?.type ?? ResourceType.None;
+            return wood != stone && wood != ResourceType.None && stone != ResourceType.None &&
+                race.GetBuildingTypeToTakeFrom(wood) != BuildingType.None &&
+                race.GetBuildingTypeToTakeFrom(stone) != BuildingType.None;
         }
 
         internal static string MaterialTerms(Charter choice)

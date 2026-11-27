@@ -1,5 +1,7 @@
 using System;
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using HarmonyLib;
 using Newtonsoft.Json;
 using SuperFantasyKingdom;
@@ -10,6 +12,9 @@ namespace KingdomCharters
 {
     internal static class SaveHooks
     {
+        private const string StateProperty = "\"kingdomChartersV1\"";
+        private static readonly Regex StateMember = new Regex(StateProperty + @"\s*:", RegexOptions.CultureInvariant);
+
         // Unity ignores extra fields when constructing GameData. Its own payload and hash stay intact.
         [Serializable]
         private sealed class Snapshot
@@ -35,7 +40,7 @@ namespace KingdomCharters
             private static void Postfix(string __0, object __result)
             {
                 if (!(__result is GameData data) || string.IsNullOrEmpty(__0) ||
-                    !__0.Contains("\"kingdomChartersV1\"")) return;
+                    !StateMember.IsMatch(__0)) return;
                 try
                 {
                     var saved = JsonConvert.DeserializeObject<Snapshot>(__0);
@@ -103,16 +108,27 @@ namespace KingdomCharters
             }
         }
 
-        [HarmonyPatch(typeof(SaveManager), nameof(SaveManager.Save), typeof(string), typeof(string))]
+        [HarmonyPatch]
         private static class Write
         {
-            private static void Prefix(string file, ref string jsonString)
+            private static MethodBase TargetMethod()
+            {
+                // 0.8.070 supplies doBackUp at the call site. The normal game
+                // checkpoint passes false, while the tavern passes true.
+                return AccessTools.DeclaredMethod(typeof(SaveManager), nameof(SaveManager.Save),
+                    new[] { typeof(string), typeof(string), typeof(bool) }) ??
+                    AccessTools.DeclaredMethod(typeof(SaveManager), nameof(SaveManager.Save),
+                        new[] { typeof(string), typeof(string) });
+            }
+
+            private static void Prefix(string __0, ref string __1)
             {
                 var mod = Plugin.Instance;
-                if (mod.Run == null || string.IsNullOrEmpty(mod.RunId) || !IsNormalSave(file) || string.IsNullOrEmpty(jsonString)) return;
-                if (JsonUtility.FromJson<Snapshot>(jsonString).runID != mod.RunId) return;
-                int end = jsonString.LastIndexOf('}');
-                if (end >= 0) jsonString = jsonString.Insert(end, ",\"kingdomChartersV1\":" + JsonUtility.ToJson(mod.Run));
+                if (mod.Run == null || string.IsNullOrEmpty(mod.RunId) || !IsNormalSave(__0) ||
+                    string.IsNullOrEmpty(__1) || StateMember.IsMatch(__1)) return;
+                if (JsonUtility.FromJson<Snapshot>(__1)?.runID != mod.RunId) return;
+                int end = __1.LastIndexOf('}');
+                if (end >= 0) __1 = __1.Insert(end, "," + StateProperty + ":" + JsonUtility.ToJson(mod.Run));
             }
         }
     }

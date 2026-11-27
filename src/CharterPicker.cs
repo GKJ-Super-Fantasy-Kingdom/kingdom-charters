@@ -19,18 +19,33 @@ namespace KingdomCharters
         private GameObject play, root;
         private RectTransform panel, page;
         private TMP_FontAsset font;
-        private Sprite buttonSkin;
-        private CanvasScaler scaler;
+        private Button footerTemplate;
+        private Canvas canvas;
         private Image backIcon;
-        private RectTransform focusMarker;
-        private TMP_Text backHint;
-        private string scheme;
-        private bool review, interactable, raycasts, waitForRelease;
+        private TMP_Text backLabel;
+        private Button backButton;
+        private Button startButton;
+        private int footerReturn;
+        private bool review, interactable, raycasts, waitForRelease, keyboardNavigation;
         private int selected, changedFrame = -1, backFrame = -1;
         internal bool IsOpen => root != null;
         internal bool HandledBackThisFrame => backFrame == Time.frameCount;
+        private static bool GamepadInUse
+        {
+            get
+            {
+                var input = GamepadManager.Instance;
+                var scheme = input?.GetPlayerInput()?.currentControlScheme;
+                return string.IsNullOrEmpty(scheme) ? input?.IsGamepadInUse() == true : scheme == "Gamepad";
+            }
+        }
+        internal bool ShowNavigationFocus => GamepadInUse || keyboardNavigation;
+        internal void KeyboardNavigation() { if (!GamepadInUse) keyboardNavigation = true; }
+        internal void PointerNavigation() { if (!GamepadInUse) keyboardNavigation = false; }
         private static InputSystemUIInputModule Module => EventSystem.current?.currentInputModule as InputSystemUIInputModule;
-        private static readonly Color Ink = new Color32(26, 32, 36, 255);
+        private const int CardWidth = 280, CardHeight = 420, Gap = 24, CardTop = 92;
+        private const int PanelWidth = 4 * CardWidth + 3 * Gap + 64, ReviewWidth = 732, PanelHeight = 592;
+        private const int FooterTop = 530, FooterHeight = 36, FooterWidth = 230, FooterGap = 16;
         private static readonly Color Paper = new Color32(245, 234, 204, 255);
 
         internal void Open(TitleScreenHeroSelectionManager owner, CanvasGroup group, GameObject opener)
@@ -40,22 +55,27 @@ namespace KingdomCharters
             play = opener;
             interactable = group.interactable;
             raycasts = group.blocksRaycasts;
-            selected = 0;
+            selected = footerReturn = 0;
             review = false;
+            keyboardNavigation = false;
             var nativeText = play.GetComponentInChildren<TMP_Text>(true) ?? screen.GetComponentInChildren<TMP_Text>(true);
             font = nativeText != null ? nativeText.font : TMP_Settings.defaultFontAsset;
-            buttonSkin = (play.GetComponent<Button>()?.targetGraphic as Image)?.sprite;
-            root = new GameObject("Kingdom Charters", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-            var canvas = root.GetComponent<Canvas>();
+            // This title-safe prefab has the same cancel plate as Unit and Relic Selection.
+            var message = Resources.Load<GameObject>("UI/OverlayMessage");
+            footerTemplate = message?.transform.Find("Buttons/Cancel")?.GetComponent<Button>();
+            root = new GameObject("Kingdom Charters", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster));
+            canvas = root.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 32000;
-            scaler = root.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
             ScaleToScreen();
-            var shade = Box(root.transform, "Backdrop", new Color(0.03f, 0.04f, 0.05f, 0.69f));
+            SettingsManager.OnResolutionChange += OnResolutionChange;
+            var shield = Box(root.transform, "Modal input", Color.clear);
+            Stretch(shield);
+            var shade = Box(shield, "Backdrop", new Color(0.03f, 0.04f, 0.05f, 0.78f));
             Stretch(shade);
-            panel = Box(shade, "Charter menu", Ink);
-            panel.sizeDelta = new Vector2(852, 644);
+            shade.offsetMax = new Vector2(0, -52); // Leave the title screen's resource row visible.
+            shade.GetComponent<Image>().raycastTarget = false;
+            panel = Child(shield, "Charter menu");
             group.interactable = false;
             group.blocksRaycasts = false;
             Draw();
@@ -64,58 +84,63 @@ namespace KingdomCharters
         private void ScaleToScreen()
         {
             float preferred = SettingsManager.Instance != null ? SettingsManager.Instance.GetUIScaling() : 1f;
-            scaler.scaleFactor = Mathf.Min(Mathf.Max(preferred, 1f), Screen.width / 876f, Screen.height / 668f);
+            canvas.scaleFactor = Mathf.Min(Mathf.Max(preferred, 1f), Screen.width / (PanelWidth + 24f), Screen.height / (PanelHeight + 24f));
         }
+
+        private void OnResolutionChange(int _) => ScaleToScreen();
 
         private void Draw()
         {
             changedFrame = Time.frameCount;
             if (page != null) { page.gameObject.SetActive(false); Destroy(page.gameObject); }
             buttons.Clear();
+            startButton = null;
             page = Child(panel, "Choices");
             Stretch(page);
-            Label(page, review ? "Review Your Charter" : "Kingdom Charters", 30, 16, 780, 52, 36);
+            int width = review ? ReviewWidth : PanelWidth;
+            panel.sizeDelta = new Vector2(width, PanelHeight);
+            var heading = Box(page, "Chooser heading", new Color32(18, 22, 28, 220));
+            Position(heading, (width - 356) / 2, 24, 356, 47);
+            heading.GetComponent<Image>().raycastTarget = false;
+            CenterLabel(heading, review ? "Review Your Charter" : "Kingdom Charters", 8, 0, 340, 47, 33);
             if (review)
             {
-                Label(page, CharterState.Names[selected], 34, 78, 780, 55, 32);
-                Label(page, selected == (int)Charter.Merchant ? "Caravan Schedule" : "Starting Supplies",
-                    36, 150, 780, 34, 22).color = new Color32(255, 211, 126, 255);
-                Label(page, Benefit(selected), 36, 187, 776, 58, 25);
-                string cost = CharterState.Costs[selected];
-                if (cost.Length != 0)
-                {
-                    Label(page, selected == (int)Charter.Merchant ? "Selection Fee" : "Repayment",
-                        36, 253, 780, 34, 22).color = new Color32(255, 211, 126, 255);
-                    Label(page, cost, 36, 289, 776, 67, 25);
-                }
-                AddButton("Start Run", 365, 70, Commit);
-                AddButton("Back to Charters", 450, 65, Back);
+                AddCard(selected, (width - CardWidth) / 2, false);
+                int left = (width - 2 * FooterWidth - FooterGap) / 2;
+                startButton = Footer("Start Run", left + FooterWidth + FooterGap, Commit, out _);
+                buttons.Add(startButton);
+                backButton = AddBack("Back to Charters", left);
             }
             else
             {
                 for (int i = 0; i < CharterState.Names.Length; i++)
-                {
-                    int index = i;
-                    AddButton(CharterState.Names[i] + "\n" + Terms(i), 78 + i * 101, 92, () => Inspect(index));
-                }
-                AddButton("Back to Hero Selection", 491, 55, Back);
+                    buttons.Add(AddCard(i, 32 + i * (CardWidth + Gap), true));
+                backButton = AddBack("Back to Selection", (PanelWidth - FooterWidth) / 2);
             }
+            buttons.Add(backButton);
             WireNavigation();
-            backIcon = Icon(34);
-            backHint = Label(page, "", 79, 570, 720, 47, 19);
-            scheme = null;
             RefreshPrompts();
-            focusMarker = Box(page, "Focused choice", new Color32(255, 208, 83, 255));
-            focusMarker.GetComponent<Image>().raycastTarget = false;
-            Focus(review ? 0 : selected);
+            Focus(review ? startButton : buttons[selected]);
         }
 
-        private string Terms(int index)
+        private static readonly Color Gold = new Color32(255, 211, 126, 255);
+
+        private static string AvailabilityReason(int index, RaceManager race)
         {
             if (index == (int)Charter.Merchant && Plugin.DailyCaravan)
-                return "Unavailable while Daily Caravan sets the schedule.";
-            var cost = CharterState.Costs[index];
-            return cost.Length == 0 ? Benefit(index) : Benefit(index) + " " + cost;
+                return "Daily Caravan sets the schedule.";
+            if (index >= (int)Charter.Forester && race != null && !Supplies.TryMaterials(race, out _, out _))
+                return "This kingdom needs two distinct stored materials.";
+            return null;
+        }
+
+        private static string UnavailableReason(int index)
+        {
+            // The base game creates RaceManager with the kingdom scene. A provider
+            // may already expose it here. Never use a previously loaded kingdom's data.
+            var race = RaceManager.Instance;
+            if (race != null && MainManager.Instance != null && race.GetRace() != MainManager.Instance.GetSelectedKingdom()) race = null;
+            return AvailabilityReason(index, race);
         }
 
         private static string Benefit(int index) =>
@@ -126,8 +151,8 @@ namespace KingdomCharters
         private void Inspect(int index)
         {
             if (Time.frameCount == changedFrame) return;
-            selected = index;
-            if (index == (int)Charter.Merchant && Plugin.DailyCaravan) { Focus(index); return; }
+            if (UnavailableReason(index) != null) return;
+            selected = footerReturn = index;
             review = true;
             waitForRelease = Module?.submit?.action?.IsPressed() == true;
             Draw();
@@ -136,7 +161,7 @@ namespace KingdomCharters
         private void Commit()
         {
             if (!review || waitForRelease || changedFrame == Time.frameCount) return;
-            if (selected == (int)Charter.Merchant && Plugin.DailyCaravan) { Back(); return; }
+            if (UnavailableReason(selected) != null) { Back(); return; }
             var owner = screen;
             var choice = (Charter)selected;
             Close();
@@ -158,12 +183,13 @@ namespace KingdomCharters
                 underlying.interactable = interactable;
                 underlying.blocksRaycasts = raycasts;
             }
+            SettingsManager.OnResolutionChange -= OnResolutionChange;
             root.SetActive(false);
             Destroy(root);
             root = null;
             if (play != null && EventSystem.current != null)
             {
-                GamepadManager.Instance.SetGameObjectToSelect(play, true);
+                GamepadManager.Instance?.SetGameObjectToSelect(play, true);
                 EventSystem.current.SetSelectedGameObject(play);
             }
         }
@@ -177,6 +203,15 @@ namespace KingdomCharters
             ScaleToScreen();
             var module = Module;
             var keyboard = Keyboard.current;
+            var mouse = Mouse.current;
+            if (GamepadInUse || (mouse != null && (mouse.delta.ReadValue().sqrMagnitude > 0f ||
+                mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame)))
+                keyboardNavigation = false;
+            if (keyboard != null && (keyboard.leftArrowKey.wasPressedThisFrame ||
+                keyboard.rightArrowKey.wasPressedThisFrame || keyboard.upArrowKey.wasPressedThisFrame ||
+                keyboard.downArrowKey.wasPressedThisFrame || keyboard.enterKey.wasPressedThisFrame ||
+                keyboard.numpadEnterKey.wasPressedThisFrame))
+                KeyboardNavigation();
             if (waitForRelease && module?.submit?.action?.IsPressed() != true) waitForRelease = false;
             if (changedFrame == Time.frameCount) return;
             if (module?.cancel?.action?.WasPerformedThisFrame() == true ||
@@ -185,23 +220,30 @@ namespace KingdomCharters
             // expose only gamepad navigation, so retain keyboard access in those schemes.
             if (keyboard != null && module?.move?.action?.WasPerformedThisFrame() != true)
             {
-                if (keyboard.downArrowKey.wasPressedThisFrame) Step(1);
-                else if (keyboard.upArrowKey.wasPressedThisFrame) Step(-1);
+                var focus = FocusedButton();
+                if (focus != null)
+                {
+                    if (keyboard.leftArrowKey.wasPressedThisFrame) Focus(focus.FindSelectableOnLeft() as Button);
+                    else if (keyboard.rightArrowKey.wasPressedThisFrame) Focus(focus.FindSelectableOnRight() as Button);
+                    else if (keyboard.upArrowKey.wasPressedThisFrame) Focus(focus.FindSelectableOnUp() as Button);
+                    else if (keyboard.downArrowKey.wasPressedThisFrame) Focus(focus.FindSelectableOnDown() as Button);
+                }
             }
+            var focused = FocusedButton();
             if (keyboard?.enterKey.wasPressedThisFrame == true && module?.submit?.action?.WasPerformedThisFrame() != true)
-            {
-                int index = FocusIndex();
-                if (index >= 0) buttons[index].onClick.Invoke();
-            }
-            var focused = FocusIndex();
-            if (focused < 0) Focus(review ? 0 : selected);
+                focused?.onClick.Invoke();
+            if (changedFrame == Time.frameCount || !IsOpen) return;
+            if (focused == null || !focused.IsInteractable()) Focus(review ? startButton : buttons[selected]);
             else
             {
-                PlaceFocusMarker(focused);
-                if (!review && focused < CharterState.Names.Length) selected = focused;
+                if (!review && focused != backButton)
+                {
+                    selected = footerReturn = buttons.IndexOf(focused);
+                    UpdateBackNavigation();
+                }
                 var pad = GamepadManager.Instance;
-                if (pad != null && pad.GetGameObjectToSelect() != buttons[focused].gameObject)
-                    pad.SetGameObjectToSelect(buttons[focused].gameObject, true);
+                if (pad != null && pad.GetGameObjectToSelect() != focused.gameObject)
+                    pad.SetGameObjectToSelect(focused.gameObject, true);
             }
             RefreshPrompts();
         }
@@ -209,12 +251,14 @@ namespace KingdomCharters
         private void RefreshPrompts()
         {
             var input = GamepadManager.Instance?.GetPlayerInput();
-            string current = input?.currentControlScheme ?? "";
-            if (scheme == current) return;
-            scheme = current;
-            string back = Prompt(Module?.cancel?.action, current, backIcon, "Esc");
-            backHint.text = backIcon.enabled ? "Back" : string.IsNullOrEmpty(back) ? "" : $"{back}  Back";
-            Position(backHint.rectTransform, backIcon.enabled ? 79 : 34, 570, 720, 47);
+            bool hadIcon = backIcon.enabled;
+            string back = Prompt(Module?.cancel?.action, input?.currentControlScheme ?? "", backIcon, "Esc");
+            string caption = backButton.name;
+            if (!backIcon.enabled && !string.IsNullOrEmpty(back)) caption = $"{back}  {caption}";
+            if (backLabel.text == caption && hadIcon == backIcon.enabled) return;
+            backLabel.text = caption;
+            int left = backIcon.enabled ? 44 : 10;
+            Position(backLabel.rectTransform, left, 2, FooterWidth - left - 10, FooterHeight - 4);
         }
 
         private static string Prompt(InputAction action, string group, Image image, string keyboardFallback)
@@ -222,7 +266,7 @@ namespace KingdomCharters
             image.enabled = false;
             if (action == null || string.IsNullOrEmpty(group)) return keyboardFallback;
             int index = action.GetBindingIndex(group);
-            if (index < 0) return GamepadManager.Instance.IsGamepadInUse() ? "" : keyboardFallback;
+            if (index < 0) return GamepadManager.Instance?.IsGamepadInUse() == true ? "" : keyboardFallback;
             var binding = action.bindings[index];
             string path = binding.effectivePath;
             if (!string.IsNullOrEmpty(path))
@@ -230,80 +274,159 @@ namespace KingdomCharters
                 image.sprite = GamepadManager.Instance.GetButtonPrompt(path);
                 image.enabled = image.sprite != null;
             }
-            return action.GetBindingDisplayString(index);
+            return !string.IsNullOrEmpty(path) ? action.GetBindingDisplayString(index)
+                : GamepadManager.Instance?.IsGamepadInUse() == true ? "" : keyboardFallback;
         }
 
-        private int FocusIndex()
+        private Button FocusedButton()
         {
-            var obj = EventSystem.current?.currentSelectedGameObject;
-            return buttons.FindIndex(b => b.gameObject == obj);
+            var current = EventSystem.current?.currentSelectedGameObject;
+            return buttons.Find(button => button.gameObject == current);
         }
 
-        private void Step(int delta) => Focus((Math.Max(0, FocusIndex()) + delta + buttons.Count) % buttons.Count);
-        private void Focus(int index)
+        private void Focus(Button button)
         {
-            PlaceFocusMarker(index);
-            var target = buttons[index].gameObject;
-            GamepadManager.Instance?.SetGameObjectToSelect(target, true);
-            EventSystem.current?.SetSelectedGameObject(target);
-        }
-
-        private void PlaceFocusMarker(int index)
-        {
-            if (focusMarker == null) return;
-            var row = (RectTransform)buttons[index].transform;
-            Position(focusMarker, 32, Mathf.RoundToInt(-row.anchoredPosition.y) + 12, 5,
-                Mathf.RoundToInt(row.sizeDelta.y) - 24);
+            if (button == null || !button.IsInteractable()) return;
+            GamepadManager.Instance?.SetGameObjectToSelect(button.gameObject, true);
+            EventSystem.current?.SetSelectedGameObject(button.gameObject);
         }
 
         private void WireNavigation()
         {
-            for (int i = 0; i < buttons.Count; i++)
-                buttons[i].navigation = new Navigation { mode = Navigation.Mode.Explicit,
-                    selectOnUp = buttons[(i + buttons.Count - 1) % buttons.Count],
-                    selectOnDown = buttons[(i + 1) % buttons.Count] };
-        }
-
-        private void AddButton(string caption, int y, int height, Action action)
-        {
-            var rect = Box(page, caption.Split('\n')[0], Color.white);
-            Position(rect, 28, y, 796, height);
-            var button = rect.gameObject.AddComponent<Button>();
-            button.targetGraphic = rect.GetComponent<Image>();
-            var face = (Image)button.targetGraphic;
-            if (buttonSkin != null)
+            if (review)
             {
-                face.sprite = buttonSkin;
-                face.type = Image.Type.Sliced;
+                Navigate(startButton, backButton, backButton, backButton, backButton);
+                Navigate(backButton, startButton, startButton, startButton, startButton);
+                return;
             }
-            var colors = button.colors;
-            colors.normalColor = new Color32(182, 196, 207, 255);
-            colors.highlightedColor = colors.selectedColor = new Color32(255, 190, 77, 255);
-            colors.pressedColor = new Color32(235, 160, 62, 255);
-            button.colors = colors;
-            int split = caption.IndexOf('\n');
-            bool choice = split >= 0;
-            if (choice)
-                Label(rect, caption.Substring(0, split), 22, 6, 752, 33, 25).color = Color.white;
-            var captionLabel = choice
-                ? Label(rect, caption.Substring(split + 1), 22, 39, 752, height - 45, 20)
-                : Label(rect, caption, 20, 7, 752, height - 14, 23);
-            captionLabel.color = Color.white;
-            captionLabel.enableAutoSizing = true;
-            captionLabel.fontSizeMin = 17;
-            captionLabel.fontSizeMax = choice ? 20 : 23;
-            button.onClick.AddListener(() => action());
-            buttons.Add(button);
+            for (int i = 0; i < CharterState.Names.Length; i++)
+            {
+                var card = buttons[i];
+                if (!card.interactable) continue;
+                Navigate(card, Neighbor(i, -1), Neighbor(i, 1), backButton, backButton);
+            }
+            if (!buttons[selected].interactable) selected = footerReturn = 0;
+            UpdateBackNavigation();
         }
 
-        private Image Icon(int x)
+        private Button Neighbor(int index, int direction)
         {
-            var rt = Box(page, "Input prompt", Color.white);
-            Position(rt, x, 578, 32, 32);
-            var img = rt.GetComponent<Image>();
-            img.preserveAspect = true;
-            img.raycastTarget = false;
-            return img;
+            for (int i = index + direction; i >= 0 && i < CharterState.Names.Length; i += direction)
+                if (buttons[i].interactable) return buttons[i];
+            return null;
+        }
+
+        private void UpdateBackNavigation()
+        {
+            var card = buttons[footerReturn];
+            Navigate(backButton, null, null, card, card);
+        }
+
+        private static void Navigate(Button button, Button left, Button right, Button up, Button down) =>
+            button.navigation = new Navigation { mode = Navigation.Mode.Explicit,
+                selectOnLeft = left, selectOnRight = right, selectOnUp = up, selectOnDown = down };
+
+        private Button AddCard(int index, int x, bool interactive)
+        {
+            string title = CharterState.Names[index];
+            string unavailable = UnavailableReason(index);
+            var rect = Box(page, title, Color.white);
+            Position(rect, x, CardTop, CardWidth, CardHeight);
+            var face = rect.GetComponent<Image>();
+            face.sprite = CharterCardArt.For(index);
+            face.raycastTarget = interactive;
+            CenterLabel(rect, title, 24, 179, 232, 38, 26).fontStyle = FontStyles.Bold;
+
+            if (unavailable != null)
+            {
+                face.color = new Color32(158, 158, 158, 255);
+                CenterLabel(rect, "Unavailable", 22, 233, 236, 31, 22).color = Gold;
+                CenterLabel(rect, unavailable, 22, 273, 236, 102, 23);
+            }
+            else if (index == (int)Charter.Standard)
+                CenterLabel(rect, Benefit(index), 22, 232, 236, 74, 22);
+            else
+            {
+                CenterLabel(rect, Benefit(index), 22, 232, 236, 74, 22);
+                var divider = Box(rect, "Terms divider", new Color32(192, 175, 139, 125));
+                Position(divider, 54, 310, 172, 2);
+                divider.GetComponent<Image>().raycastTarget = false;
+                CenterLabel(rect, CharterState.Costs[index], 22, 317, 236, 76, 22);
+            }
+            return interactive ? MakeButton(rect, unavailable == null, () => Inspect(index)) : null;
+        }
+
+        private Button Footer(string caption, int x, Action action, out TMP_Text label)
+        {
+            var rect = Box(page, caption, new Color32(145, 43, 28, 255));
+            Position(rect, x, FooterTop, FooterWidth, FooterHeight);
+            var face = rect.GetComponent<Image>();
+            var button = rect.gameObject.AddComponent<CharterButton>();
+            button.targetGraphic = face;
+            button.onClick.AddListener(() => action());
+
+            if (footerTemplate?.targetGraphic is Image source)
+            {
+                face.sprite = source.sprite;
+                face.type = source.type;
+                face.color = source.color;
+                face.pixelsPerUnitMultiplier = EdgePixelsPerUnit(source);
+                button.spriteState = footerTemplate.spriteState;
+                button.transition = Selectable.Transition.SpriteSwap;
+            }
+            button.Configure(this, button.spriteState.selectedSprite, face.pixelsPerUnitMultiplier);
+
+            label = CenterLabel(rect, caption, 10, 2, FooterWidth - 20, FooterHeight - 4, 20);
+            var nativeLabel = footerTemplate?.transform.Find("Text")?.GetComponent<TMP_Text>();
+            if (nativeLabel?.font != null) label.font = nativeLabel.font;
+            return button;
+        }
+
+        private float EdgePixelsPerUnit(Image source) =>
+            source.pixelsPerUnitMultiplier * 3f * (canvas.referencePixelsPerUnit / 100f);
+
+        private Button MakeButton(RectTransform rect, bool available, Action action)
+        {
+            var button = rect.gameObject.AddComponent<CharterButton>();
+            button.targetGraphic = rect.GetComponent<Image>();
+            var colors = button.colors;
+            colors.normalColor = new Color(.93f, .93f, .93f);
+            colors.selectedColor = colors.highlightedColor = Color.white;
+            colors.pressedColor = new Color(.9f, .83f, .68f);
+            colors.disabledColor = Color.white;
+            button.colors = colors;
+            button.interactable = available;
+            if (!available)
+            {
+                button.navigation = new Navigation { mode = Navigation.Mode.None };
+                return button;
+            }
+            if (footerTemplate?.targetGraphic is Image nativePlate)
+                button.Configure(this, footerTemplate.spriteState.selectedSprite, EdgePixelsPerUnit(nativePlate), card: true);
+            button.onClick.AddListener(() => action());
+            return button;
+        }
+
+        private TMP_Text CenterLabel(Transform parent, string value, int x, int y, int w, int h, int size)
+        {
+            var label = Label(parent, value, x, y, w, h, size);
+            label.alignment = TextAlignmentOptions.Center;
+            label.enableAutoSizing = true;
+            label.fontSizeMax = size;
+            label.fontSizeMin = Mathf.Max(18, size - 4);
+            return label;
+        }
+
+        private Button AddBack(string caption, int x)
+        {
+            var button = Footer(caption, x, Back, out backLabel);
+            var icon = Box(button.transform, "Input prompt", Color.white);
+            Position(icon, 15, (FooterHeight - 24) / 2, 24, 24);
+            backIcon = icon.GetComponent<Image>();
+            backIcon.enabled = false;
+            backIcon.preserveAspect = true;
+            backIcon.raycastTarget = false;
+            return button;
         }
 
         private TMP_Text Label(Transform parent, string value, int x, int y, int w, int h, int size)

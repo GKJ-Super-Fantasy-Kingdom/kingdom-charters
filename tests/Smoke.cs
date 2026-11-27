@@ -90,6 +90,14 @@ internal static class Smoke
             var targets = harmony.GetPatchedMethods().ToArray();
             foreach (var m in targets) Console.WriteLine("PATCH " + m.DeclaringType.Name + "." + m.Name);
             Check(targets.Length == 25, "25 patches installed against the game assemblies");
+            var saveType = Assembly.Load("Assembly-CSharp").GetType("SuperFantasyKingdom.SaveManager", true);
+            var checkpoint = saveType.GetMethod("Save", All, null, new[] { typeof(string), typeof(string), typeof(bool) }, null) ??
+                saveType.GetMethod("Save", All, null, new[] { typeof(string), typeof(string) }, null);
+            Check(checkpoint != null &&
+                targets.Count(m => m.DeclaringType == saveType && m.Name == "Save") == 1 &&
+                targets.Contains(checkpoint) &&
+                Harmony.GetPatchInfo(checkpoint).Prefixes.Count(p => p.owner == harmony.Id) == 1,
+                "one charter prefix on native " + (checkpoint != null ? checkpoint.ToString() : "Save"));
             Interactions.Run(mod, args[2]);
             harmony.UnpatchSelf();
             Check(!harmony.GetPatchedMethods().Any(), "patches removed");
